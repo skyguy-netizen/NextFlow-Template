@@ -5,49 +5,36 @@ import numpy as np
 import sys
 import pickle
 import os
+import argparse
+import glob
 
-bins = {}
-mergedfile = sys.argv[1]
+def main():
+    parser = argparse.ArgumentParser(description='creating histogram.')
+    parser.add_argument('input_folder')
+    parser.add_argument('output_filename')
 
-files = int(sys.argv[2])
+    args = parser.parse_args()
 
-for i in range(1, files+1):
-    with open(sys.argv[i+2], 'rb') as f:#read file 1
-        bins1 = pickle.load(f)
-    for x in bins1:
-        if x in bins:
-            bins1[x] += bins1[x]
-        else:
-            bins[x] = bins1[x]
+    bins = {}
 
+    # Getting the filenames
+    input_files = glob.glob(args.input_folder + "/*.pickle")
 
+    for input_filename in input_files:
+        with open(input_filename, 'rb') as f:#read file 1
+            bins1 = pickle.load(f)
 
-# with open(sys.argv[2], 'rb') as f:#read file 2
-#     bins2 = pickle.load(f)
+        for x in bins1:
+            if x in bins:
+                bins1[x] += bins1[x]
+            else:
+                bins[x] = bins1[x]
 
-# for x in bins2:
-#     if x in bins1:
-#         bins1[x] += bins2[x]
-#     else:
-#         bins1[x] = bins2[x]
+    with open(args.output_filename, 'wb') as f:#save merged file
+        pickle.dump(bins, f)
 
-
-# histlist = [(k[0], k[1], v) for k, v in bins1.items()]
-# x = [item[0] for item in histlist]
-# y = [item[1] for item in histlist]
-# counts = [item[2] for item in histlist]
-
-
-# plt.hist2d(x, y, bins=[1000, 1000], weights=counts)
-# plt.xlabel('precmz')
-# plt.ylabel('mz')
-# plt.colorbar()
-# plt.savefig(sys.argv[4])
-
-with open(mergedfile, 'wb') as f:#save merged file
-    pickle.dump(bins, f)
-
-
+if __name__ == "__main__":
+    main()
 
 
 

@@ -37,7 +37,7 @@ process processData {
 
     script:
     """
-    python $TOOL_FOLDER/script.py $input ${input}.pickle
+    python $TOOL_FOLDER/create_individual_histogram.py $input ${input}.pickle
     """
 }
 
@@ -54,7 +54,7 @@ process mergeData {
 
     script:
     """
-    python $TOOL_FOLDER/mergedata.py mergedset_${task.index}.pickle ${ready.size()} ${ready.join(' ')}
+    python $TOOL_FOLDER/mergedata.py individual mergedset_${task.index}.pickle
 
     """
 }
@@ -65,15 +65,14 @@ process createHist {
     conda "$TOOL_FOLDER/conda_env.yml"
 
     input:
-    val ready
-    path fq
+    file "merged/*"
 
     output:
     file "finalhist.png"
 
     script:
     """
-    python $TOOL_FOLDER/createhist.py finalhist.png ${ready.size()} ${ready.join(' ')}
+    python $TOOL_FOLDER/createhist.py merged finalhist.png
 
     """
 }
@@ -81,7 +80,9 @@ process createHist {
 workflow {
     data = Channel.fromPath(params.input_merge, checkIfExists:true)
     converted_file_ch = convertFile(data)
-    processData(converted_file_ch)
-    mergeData(processData.out.collate(1000), data)
-    createHist(mergeData.out.collate(1000), data)
+
+    individual_histogram_ch = processData(converted_file_ch)
+    merged_histogram_ch = mergeData(individual_histogram_ch.collate(1000))
+
+    createHist(merged_histogram_ch.collate(1000))
 }
